@@ -164,7 +164,7 @@ hellomake: hellomake.o hellofunc.o
 
 
 3. When using static pattern rules
-Static pattern rules are defined in the format <targets>:<target pattern>:<prerequisite pattern>
+Static pattern rules are defined in the format \<targets\>:\<target pattern\>:\<prerequisite pattern\>
 ```make
 objects = foo.o bar.o all.o
 all: $(objects)
@@ -184,9 +184,54 @@ all.c:
 
 
 
+## Rule Precedence
+If there are multiple rules that match a target name, the rule will be chosen based on this order of precedence, from highest to lowest:
+
+Explicit filename with path: `lib/foo.c`
+
+Implicit filename with path: `lib/%.c`
+
+Explicit filename: `foo.c`
+
+Implicit filename: `%.c`
+
+```make
+all: lib/foo.c
+	echo "finished"
+
+%.c:
+	echo "%.c chosen"
+
+foo.c:
+	echo "foo.c chosen"
+
+lib/%.c:
+	echo "lib/%.c chosen"
+
+lib/foo.c:
+	echo "lib/foo.c chosen"
+```
 
 
 
+
+
+
+## Functions
+
+### Filter
+Specify files that match specific pattern
+```make
+$(filter <pattern>,<files>)
+```
+For example:
+```make
+obj_files = a.o b.o c.a d.o
+echo $(filter %.o,$(obj_files))
+```
+```
+> a.o b.o d.o
+```
 
 
 

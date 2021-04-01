@@ -1,5 +1,23 @@
 # makefile_notes
 
+## What is the Purpose of Makefiles?
+Makefiles are designed to keep track of:
+1. Which files to include when compiling
+2. Which files are dependent on other files
+3. Which order to compile files in
+4. Which files are up to date and which need recompiling
+
+
+## How Does C Compilation Work?
+1. Preprocessing 	- remove comments, replace variables and #defines with actual values, insert header files
+2. Compiling 		- convert C code to Assembly (specific to target CPU) 	
+3. Assembly		- convert Assembly code to Machine Code (binary)
+4. Linking		- combine object files into single executable, link code to library functions
+
+program.c > `preprocessing, compiling, assembly` > program.o > `linking` > program
+
+
+
 ## Rules
 ### Single Target Rules
 Makefiles are made up of rules:
@@ -181,7 +199,9 @@ bar := $(patsubst %.o,%.c,$(foo))
 
 2. To define a rule for all files of a certain type:
 ```
-%.o: %.c                # when hellomake is called, this rule will execute for both hellomake.o and hellofunc.o
+# when hellomake is called, this rule 
+# will execute for both hellomake.o and hellofunc.o
+%.o: %.c
 	$(CC) -c -o $@ $<
 
 hellomake: hellomake.o hellofunc.o 

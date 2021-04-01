@@ -4,15 +4,15 @@
 Makefiles are made up of rules:
 ```make
 target: prerequisite
-  command
-  command
-  command
+    command
+    command
+    command
 ```
 Rules are made up of:
 
-`target` = output file
+`target` = output file(s)
 
-`prerequisites` = input file
+`prerequisites` = input file(s)
 
 `command` = command to execute
 
@@ -21,6 +21,20 @@ blah.o: blah.c
     cc -c blah.c -o blah.o
 ```
 
+If multiple targets specified, same commands can be executed for all targets
+```make
+f1.o f2.o:
+    echo $@
+```
+Is equivalent to:
+```make
+f1.o:
+    echo $@
+f2.o:
+    echo $@
+```
+
+
 Rules can also include other rules as prerequisites:
 
 ```make
@@ -28,7 +42,7 @@ blah.o: blah.c
     cc -c blah.c -o blah.o
     
 blah: blah.o
-    cc blah.o -o blah # Runs third
+    cc blah.o -o blah
 ```
 
 
@@ -52,7 +66,9 @@ make -k
 ```
 
 Ignore all errors (prepend `-` to every command)
-
+```
+make -i
+```
 
 ## Variables
 
@@ -103,9 +119,82 @@ all:
 
 ## Automatic Variables
 
-```make
+`$@` = target
 
+`$<` = first prerequisite
+
+`$^` = all prerequisites
+
+`$?` = all prerequisites newer than target
+
+`$(@D)` = directory of target
+
+`$(@F)` = filename of target (no path)
+
+
+## Wildcards
+
+`$(wildcard *)` Searches for matching filenames in current working directory
+```make
+$(wildcard *.c)     # find all .c files
+```
+
+`%` can be used in several ways:
+
+1. As a string replacement with `patsubst` (pattern substitution):
+```make
+foo := a.o b.o l.a c.o
+bar := $(patsubst %.o,%.c,$(foo))
+@echo $(bar)
+```
+```
+> a.c b.c l.a c.c
+```
+
+2. To define a rule for all files of a certain type:
+```
+%.o: %.c                # when hellomake is called, this rule will execute for both hellomake.o and hellofunc.o
+	$(CC) -c -o $@ $<
+
+hellomake: hellomake.o hellofunc.o 
+	$(CC) -o hellomake hellomake.o hellofunc.o 
 ```
 
 
+
+
+3. When using static pattern rules
+Static pattern rules are defined in the format <targets>:<target pattern>:<prerequisite pattern>
+```make
+objects = foo.o bar.o all.o
+all: $(objects)
+    
+$(objects): %.o: %.c    # c file compiled to o file using complicit rule
+
+all.c:
+    echo "int main() { return 0; }" > all.c
+
+%.c:
+    touch $@
+    
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Useful Examples
+Replace all C files in directory with object files
+```
+$(patsubst %.c,%.o,$(wildcard *.c))
+```
 

@@ -1,6 +1,7 @@
 # makefile_notes
 
-
+## Rules
+### Single Target Rules
 Makefiles are made up of rules:
 ```make
 target: prerequisite
@@ -20,7 +21,7 @@ Rules are made up of:
 blah.o: blah.c
     cc -c blah.c -o blah.o
 ```
-
+### Multiple Target Rules
 If multiple targets specified, same commands can be executed for all targets
 ```make
 f1.o f2.o:
@@ -34,16 +35,25 @@ f2.o:
     echo $@
 ```
 
-
-Rules can also include other rules as prerequisites:
+A rule defined for a file that is a prerequisite of another rule will be executed first:
 
 ```make
-blah.o: blah.c
-    cc -c blah.c -o blah.o
-    
-blah: blah.o
+blah: blah.o			# will execute second
     cc blah.o -o blah
+    
+blah.o: blah.c			# will execute first
+    cc -c blah.c -o blah.o
 ```
+
+
+### Implicit Rules
+Certain rules do not have to be defined, the makefile understands what needs to happen when a certain target and prerequisite pairing is used.
+
+The rule `file.o: file.c` will implicitly contain the command `$(CC) -c file.c -o file.o $(CPPFLAGS) $(CFLAGS)`
+
+The rule `file.o: file.cpp` will implicitly contain the command `$(CXX) -c file.cc -o file.cpp $(CPPFLAGS) $(CXXFLAGS)`
+
+The rule `file: file.o` will automatically execute the command `$(CC) $(LDFLAGS) file.o $(LOADLIBES) $(LDLIBS)`
 
 
 
@@ -130,6 +140,24 @@ all:
 `$(@D)` = directory of target
 
 `$(@F)` = filename of target (no path)
+
+
+## Important Variables
+Important variables to use when writing a makefile are:
+
+`SHELL`: Default shell to execute commands, default is `/bin/bash`
+
+`CC`: Program for compiling C programs, default is `cc`
+
+`CXX`: Program for compiling C++ programs, default is `G++`
+
+`CFLAGS`: Extra flags to give to the C compiler
+
+`CXXFLAGS`: Extra flags to give to the C++ compiler
+
+`CPPFLAGS`: Extra flags to give to the C preprosessor
+
+`LDFLAGS`: Extra flags to give to compilers when they are supposed to invoke the linker
 
 
 ## Wildcards

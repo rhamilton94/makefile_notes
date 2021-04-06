@@ -173,7 +173,7 @@ Important variables to use when writing a makefile are:
 
 `CXXFLAGS`: Extra flags to give to the C++ compiler
 
-`CPPFLAGS`: Extra flags to give to the C preprosessor
+`CPPFLAGS`: Extra flags to give to the C PreProcessor
 
 `LDFLAGS`: Extra flags to give to compilers when they are supposed to invoke the linker
 
@@ -209,8 +209,6 @@ hellomake: hellomake.o hellofunc.o
 ```
 
 
-
-
 3. When using static pattern rules
 Static pattern rules are defined in the format \<targets\>:\<target pattern\>:\<prerequisite pattern\>
 ```make
@@ -226,8 +224,6 @@ all.c:
     touch $@
     
 ```
-
-
 
 
 
@@ -262,6 +258,32 @@ lib/foo.c:
 
 
 
+## Commands
+Execute a shell command and return it's output by inserting it between backticks:
+```make
+FOO := `cat test`
+all:
+	@echo FOO IS $(FOO)
+```
+Or use the `shell` command:
+```
+BAR := $(shell cat test)
+all:
+	@echo BAR IS $(BAR)
+```
+
+
+
+
+
+Each line of the makefile is executed separately:
+```
+
+```
+
+
+
+
 
 
 
@@ -286,7 +308,7 @@ echo $(filter %.o,$(obj_files))
 
 
 ## Useful Examples
-Replace all C files in directory with object files
+Replace all C files in current directory with object files
 ```
 $(patsubst %.c,%.o,$(wildcard *.c))
 ```

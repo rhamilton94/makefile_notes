@@ -16,11 +16,11 @@ Makefiles are designed to keep track of:
 
 program.c > `preprocessing, compiling, assembly` > program.o > `linking` > program
 
-
+<br/><br/>
 
 ## Rules
+Makefiles consist of various rules about how to compile each file needed for the program
 ### Single Target Rules
-Makefiles are made up of rules:
 ```make
 target: prerequisite
     command
@@ -34,6 +34,8 @@ Rules are made up of:
 `prerequisites` = input file(s)
 
 `command` = command to execute
+
+A set of commands belonging to a rule is called a `recipe`
 
 ```make
 blah.o: blah.c
@@ -74,6 +76,7 @@ The rule `file.o: file.cpp` will implicitly contain the command `$(CXX) -c file.
 The rule `file: file.o` will automatically execute the command `$(CC) $(LDFLAGS) file.o $(LOADLIBES) $(LDLIBS)`
 
 
+<br/><br/>
 
 
 ## Command Line Arguments
@@ -97,6 +100,7 @@ Ignore all errors (prepend `-` to every command)
 ```
 make -i
 ```
+<br/><br/>
 
 ## Variables
 
@@ -110,7 +114,8 @@ all:
 
 ```
 ```
-> one later
+> make all
+one later
 ```
 
 
@@ -124,7 +129,8 @@ all:
 
 ```
 ```
-> hello there
+> make all
+hello there
 ```
 
 
@@ -133,7 +139,7 @@ all:
 ```make
 one = hello
 one ?= goodbye
-two ?= world
+two ?= there
 
 all: 
     echo $(one)
@@ -141,9 +147,80 @@ all:
 
 ```
 ```
-> hello world
+> make all
+hello there
+```
+  
+  
+`+=` appends to a variable
+```make
+foo := hello
+foo += there
+
+all: 
+    echo $(foo)
+```
+```
+> make all
+hello there
+```
+ 
+<br/><br/>
+
+Variables can also be set for specific targets or patterns only:
+```make
+all: one = cool
+%.c: two = groovy
+
+all: 
+    echo one is defined: $(one)
+
+foo.c:
+	echo two is defined: $(two)
+
+other:
+    echo one is nothing: $(one)
+	echo two is nothing: $(two)
 ```
 
+
+  
+<br/><br/>
+
+Variables must be set **outside** of any rules, otherwise they will be interpreted as build commands and cause an error.
+
+
+Executing this:
+```make
+# echo BAR > foo
+FOO = `cat foo` 		
+all:
+	@echo THE CONTENTS OF FOO IS $(FOO)
+```
+Outputs the intended result:
+```
+> make
+THE CONTENTS OF FOO IS BAR
+```
+
+While if done like this:
+```make
+# echo BAR > foo
+all:
+	FOO = `cat foo` # echo BAR > foo
+	@echo THE CONTENTS OF FOO IS $(FOO)
+```
+The Make program will interpret `FOO` as a program, and attempt to execute it, causing this:
+```
+> make
+FOO = `cat foo` # echo BAR > foo
+/bin/sh: 1: FOO: not found
+make: *** [makefile:2: all] Error 127
+```
+By using `=` and not `:=` to define a variable outside of a recipe, the value can be set when it is used, not when it is defined.
+
+
+<br/><br/>
 
 ## Automatic Variables
 
@@ -159,6 +236,7 @@ all:
 
 `$(@F)` = filename of target (no path)
 
+<br/><br/>
 
 ## Important Variables
 Important variables to use when writing a makefile are:
@@ -177,6 +255,7 @@ Important variables to use when writing a makefile are:
 
 `LDFLAGS`: Extra flags to give to compilers when they are supposed to invoke the linker
 
+<br/><br/>
 
 ## Wildcards
 
@@ -210,7 +289,8 @@ hellomake: hellomake.o hellofunc.o
 
 
 3. When using static pattern rules
-Static pattern rules are defined in the format \<targets\>:\<target pattern\>:\<prerequisite pattern\>
+
+Static pattern rules are defined in the format `<targets>:<target pattern>:<prerequisite pattern>`
 ```make
 objects = foo.o bar.o all.o
 all: $(objects)
@@ -226,7 +306,7 @@ all.c:
 ```
 
 
-
+<br/><br/>
 
 ## Rule Precedence
 If there are multiple rules that match a target name, the rule will be chosen based on this order of precedence, from highest to lowest:
@@ -256,6 +336,39 @@ lib/foo.c:
 	echo "lib/foo.c chosen"
 ```
 
+<br/><br/>
+
+
+## Conditional Statements
+If/Else:
+```make
+foo = ok
+
+all:
+ifeq ($(foo), ok)
+    echo "foo equals ok"
+else
+    echo "nope"
+endif
+```
+
+If variable is empty/not defined:
+```make
+nullstring =
+foo = $(nullstring)
+
+all:
+ifeq ($(strip $(foo)),)
+    echo "foo is empty after being stripped"
+endif
+ifeq ($(nullstring),)
+    echo "nullstring doesn't even have spaces"
+endif
+```
+
+
+
+
 
 
 ## Commands
@@ -273,18 +386,103 @@ all:
 ```
 
 
+Each line of the makefile is executed separately, for example this:
+```make
+    cd ..
+    echo `pwd`
+```
+will print the current working directory, **not** the parent directory, while this:
+```make
+    cd ..; echo `pwd`
+```
+and this:
+```make
+    cd ..; \
+    echo `pwd`
+```
+WILL print the parent directory, as the two commands are now executed in the same "shell"
+
+<br/><br/>
 
 
+## Recursive Make
+When compiling a program, you might want to include a dependency that has it's own makefile.
+To include this in the primary makefile, use `$(MAKE)` instead of `make`.
 
-Each line of the makefile is executed separately:
+Using the `$(MAKE)` variable will use the same program (e.g. `/bin/make`, `cmake` etc.) and flags that were used to execute the primary makefile 
+```make
+cd subdir && $(MAKE)
 ```
 
+<br/><br/>
+
+## Passing Variables to Child Makefiles
+To pass a variable from a parent Makefile to a child Makefile, use the `export` command:
+```make
+foo = bar
+export foo
+```
+or
+```make
+export foo = bar
+```
+To prevent a variable from being passed, use the `unexport` command.
+
+To pass ALL variables from a parent Makefile to a child Makefile, define a rule without a recipe or prerequisites containing `.EXPORT_ALL_VARIABLES` as the target:
+```make
+.EXPORT_ALL_VARIABLES:
+```
+
+Variables explicitly defined in a child Makefile take precedence over variables passed to it from the parent Makefile, unless the `-e` command line parameter is used. 
+```
+make all -e
 ```
 
 
+## Overriding Command Line Arguments
+To ensure that a variable defined in the Makefile takes precedence over a command line argument, use the `override` command.
+For example if the following Makefile is executed:
+```make
+foo = bar
+all:
+	@echo the value of foo is $(foo)
+```
+With the command `make all foo=hello`, the output will be:
+```
+the value of foo is hello
+```
+However, if the `override` command is used:
+```make
+override foo = bar
+all:
+	@echo the value of foo is $(foo)
+```
+The output of the same command `make all foo=hello` will be:
+```
+the value of foo is bar
+```
+<br/><br/>
 
+## Define Directive
 
+The `define` directive can be used to define multiple commands under a single name (each command is still executed separately):
+```make
+define two_lines
+@echo "foo"
+@echo "bar"
+endef
 
+all:
+	$(two_lines)
+
+```
+```
+> make all
+foo
+bar
+```
+
+<br/><br/>
 
 
 ## Functions
@@ -304,7 +502,7 @@ echo $(filter %.o,$(obj_files))
 ```
 
 
-
+<br/><br/
 
 
 ## Useful Examples

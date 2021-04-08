@@ -340,7 +340,7 @@ lib/foo.c:
 
 
 ## Conditional Statements
-If/Else:
+Use `ifeq` and `ifneq` for if and not if statements:
 ```make
 foo = ok
 
@@ -352,7 +352,7 @@ else
 endif
 ```
 
-If variable is empty/not defined:
+If variable is empty:
 ```make
 nullstring =
 foo = $(nullstring)
@@ -366,9 +366,43 @@ ifeq ($(nullstring),)
 endif
 ```
 
+If variable is not defined:
+```make
+bar =
+foo = $(bar)
 
+all:
+ifdef foo
+    echo "foo is defined"
+endif
+ifdef bar
+    echo "but bar is not"
+endif
+```
+```
+>make all
+foo is defined
+```
 
+<br/><br/>
 
+## MAKEFLAGS
+`$(MAKEFLAGS)` represents a string of all command line flags used to run the Makefile.
+```make
+all:
+	@echo $(MAKEFLAGS)
+```
+```
+> make all -e -i -k -s
+eiks
+```
+The Makefile can make decisions based on what command line flags have been used.
+This is done by checking that the output of the `findstring` command is `n`ot `eq`ual to nothing:
+```make
+ifneq (,$(findstring i, $(MAKEFLAGS)))
+    echo "i was passed to MAKEFLAGS"
+endif
+```
 
 
 ## Commands

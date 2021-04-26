@@ -521,6 +521,67 @@ bar
 
 ## Functions
 
+Functions are used for text processing, structured in the format
+```make
+$(fn, arguments)
+```
+or 
+```make
+${fn, arguments}
+```
+
+<br/>
+
+### Pattern Substitute String (patsubst)
+```make
+$(patsubst pattern,replacement,text)
+```
+
+Finds whitespace-separated words in `text` that match `pattern` and replaces them with `replacement`. Here pattern may contain a `%` which acts as a wildcard, matching any number of any characters within a word. If replacement also contains a `%`, the `%` is replaced by the text that matched the `%` in pattern. Only the first `%` in the pattern and replacement is treated this way; any subsequent `%` is unchanged.
+
+<br/>
+
+### For Each
+
+Performs an action against each word in a space separated list of words:
+```make
+$(foreach var,list,text)
+```
+For example:
+```make
+foo := who are you
+# For each "word" in foo, output that same word with an exclamation after
+bar := $(foreach wrd,$(foo),$(wrd)!)
+
+all:
+    @echo $(bar)
+```
+Outputs
+```
+who! are! you!
+```
+
+<br/>
+
+### IF
+Slightly different to the conditional statement explained previously
+```make
+foo = a.c
+bar = a.a a.b a.c a.d a.e
+
+statement := $(if $(filter $(foo),$(bar)),@echo "found", @echo "not found")
+
+all:
+	$(statement)
+```
+Executing `make all` outputs
+```
+found
+```
+
+<br/>
+
+
 ### Filter
 Specify files that match specific pattern
 ```make
@@ -535,8 +596,113 @@ echo $(filter %.o,$(obj_files))
 > a.o b.o d.o
 ```
 
+<br/>
 
-<br/><br/
+## Call
+
+Allows the creation of custom functions. The syntax is `$(call function_name,param,param)`
+Positional arguments are used within the function:
+```
+$(0) = function_name
+$(1) = first param
+$(2) = second param
+```
+For example
+```make
+custom_func = Function Name: $(0) First: $(1) Second: $(2) Empty Variable: $(3)
+
+all:
+    @echo $(call custom_func, foo, bar)
+```
+Executing `make all` outputs
+```
+Function Name: custom_func First: foo Second: bar Empty Variable:
+```
+
+<br/>
+
+### Shell
+
+Execute shell commands, but replaces newlines with spaces so presentation is messy
+```make
+all: 
+    @echo $(shell ls -la) 
+```
+
+<br/><br/>
+
+
+## Include other makefiles
+To execute another makefile from inside the current makefile, use the command
+```make
+include /path/to/new/makefile
+```
+
+<br/><br/>
+
+## VPATH
+The vpath is used to specify the location of various prerequisite files. The syntax is
+```
+vpath <pattern> <directories (space or colon separated)>
+```
+For example, to add all `.h` files present in the directories `../headers` and `../other-directory`
+```make
+vpath %.h ../headers ../other-directory
+```
+
+<br/><br/>
+
+## Multiline commands
+Use a backslash `\` to continue a command on the next line:
+```make
+some_file: 
+    echo This line is too long, so \
+        it is broken up into multiple lines
+```
+
+
+<br/><br/>
+
+## .PHONY
+If the makefile creates a file that has the same name as a recipe, the recipe will not execute if the file is up to date.
+For example, if a recipe creates a file called `clean`, the commonly used recipe `clean` will not run if the file is up to date.
+To get around this, use `.PHONY: <target name>` like this:
+```make
+some_file:
+    touch some_file
+    touch clean
+
+.PHONY: clean
+clean:
+    rm -f some_file
+    rm -f clean
+```
+Adding `.PHONY: <target name>` before the recipe will add the target as a prerequisite to the `.PHONY` target.
+Once this is done, `make clean` will run the recipe regardless of whether there is a file named `clean`.
+
+<br/><br/>
+
+
+
+## .DELETE_ON_ERROR
+If `.DELETE_ON_ERROR:` is added at the start of the makefile, all targets will be deleted if the make tool encounters an error during execution.
+For example:
+```make
+.DELETE_ON_ERROR:
+all: one two
+
+one:
+    touch one
+    false
+
+two:
+    touch two
+    false
+```
+
+
+<br/><br/>
+
 
 
 ## Useful Examples
@@ -544,4 +710,33 @@ Replace all C files in current directory with object files
 ```
 $(patsubst %.c,%.o,$(wildcard *.c))
 ```
+
+<br/><br/>
+
+
+## Resources
+
+Official GNU Reference Manual
+https://www.gnu.org/software/make/manual/make.html
+
+Quick reference
+https://www.gnu.org/software/make/manual/html_node/Quick-Reference.html
+
+Functions reference
+https://www.gnu.org/software/make/manual/html_node/Functions.html
+
+Best tutorial with examples (including blank template)
+https://makefiletutorial.com/
+
+Other tutorials
+https://www.cs.colby.edu/maxwell/courses/tutorials/maketutor/
+
+Cheat sheets
+https://devhints.io/makefile
+https://gist.github.com/tuannvm/c0dcf6bd052d5607fff040c235103928
+https://gist.github.com/rueycheng/42e355d1480fd7a33ee81c866c7fdf78
+
+C compilation process
+https://medium.datadriveninvestor.com/compilation-process-db17c3b58e62
+
 
